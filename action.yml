@@ -1,0 +1,31 @@
+name: 'Format Smithy'
+description: "Format smithy on directory or smithy file and fail if there's any difference"
+author: 'Necko Technologies'
+inputs:
+  version:
+    required: true
+    description: "Smithy CLI version"
+  path:
+    description: "Path of file or directory to format (e.g. model for a directory) - default to working directory"
+    required: false
+    default: "."
+runs:
+  using: "composite"
+  steps:
+    - uses: necko-actions/setup-smithy@main
+      with:
+        version: ${{ inputs.version }}
+    - run: smithy format ${{ inputs.path }}
+      shell: bash
+    - shell: bash
+      env:
+        MODEL_PATH: ${{ inputs.path }}
+      run: |
+        if [ "$(git diff --ignore-space-at-eol ${MODEL_PATH} | wc -l)" -gt "0" ]; then
+          echo "Detected uncommitted changes after build.  See status below:"
+          git diff
+          exit 1
+        fi
+branding:
+  icon: check-circle
+  color: green
